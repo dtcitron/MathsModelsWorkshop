@@ -1,0 +1,214 @@
+---
+title: "Exercise_2_Completed"
+author: "Daniel T Citron"
+date: '2023-07-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Set up
+```{r Load required Libraries}
+require("deSolve") # numerical integration package
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+```{r Define SIR model function to be integrated}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters
+  with(as.list(c(state,parameters)), {
+      # Calculate total population size
+      N <-  S + I + R
+      
+      # Calculate force of infection
+      lambda <- beta * I / N
+      
+      # Calculate derivatives
+      dS <- -lambda * S
+      dI <- lambda * S - gamma * I
+      dR <- gamma * I
+      
+      # Return derivative
+      return(list(c(dS, dI, dR)))
+    }
+  )
+}
+```
+
+
+# Exercise 2: Behavior of the SIR Model
+
+In this exercise we will explore the behavior and properties of the SIR model. For a range of parameter values of beta and gamma, find the size of the epidemic. (This code block may take a minute to run.)
+```{r}
+# Initial state values
+initial_state_values <- c(S = 9999,
+                         I = 1,
+                         R = 0
+)
+
+# Define a list of time steps 
+times = seq(from = 0, to = 1000, by = .1)
+
+# Loop over a range of beta and gamma, find the size of the epidemic each time
+beta.gamma.outbreak <- data.frame(beta = c(), 
+                                  gamma = c(), 
+                                  outbreak.size= c())
+for (beta.value in seq(0,1,.1)){
+  for (gamma.value in seq(.1,1.,.1)){
+    parameters <- c(beta = beta.value, # per-contact infection rate
+                    gamma = gamma.value # recovery rate
+                    )
+    # Integrate
+    sir.output <- as.data.frame(ode(y = initial_state_values, 
+                            times = times, 
+                            func = sir_model,
+                            parms = parameters))
+    # Find the total outbreak size
+    total.recovered = sir.output[sir.output$I <1,][1,]$R
+    
+    beta.gamma.outbreak = rbind(beta.gamma.outbreak,
+                                data.frame(beta = beta.value, 
+                                           gamma = gamma.value, 
+                                           outbreak.size = total.recovered)
+                                )
+
+  }
+}
+
+#beta.gamma.outbreak
+
+```
+
+Plot the results, the log of the outbreak size as a function of beta and gamma.
+```{r}
+p <- ggplot(data = beta.gamma.outbreak) + 
+  geom_point(mapping = aes(x = gamma, y = beta, color = log(outbreak.size)),
+             size = 4) + 
+  scale_color_gradient2() + 
+  labs("Log(Outbreak Size)") + 
+  scale_x_continuous(breaks = c(0,.2,.4,.6,.8,1)) + 
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,1)) + 
+  xlab("gamma") + 
+  ylab("Beta") +
+  theme_bw()
+p
+```
+
+
+## Question: What do you notice about how the outbreak size depends on beta and gamma?
+
+**Pause here**
+
+# Exercise 2 part 2
+
+How does the outbreak size change depending on the basic reproductive number R_0 = beta/gamma?
+
+Fix gamma = .2, vary beta from 0 to 1 such that R_0 varies from 0 to 5.
+```{r}
+# Define a list of time steps 
+times = seq(from = 0, to = 1000, by = .1)
+
+# Loop over a range of beta and gamma, find the size of the epidemic each time
+r0.outbreak <- data.frame(R_0 = c(), 
+                          outbreak.size= c())
+
+gamma.value = .2
+for (beta.value in seq(0,1,.05)){
+    parameters <- c(beta = beta.value, # per-contact infection rate
+                    gamma = gamma.value # recovery rate
+                    )
+    # Integrate
+    sir.output <- as.data.frame(ode(y = initial_state_values, 
+                            times = times, 
+                            func = sir_model,
+                            parms = parameters))
+    # Find the total outbreak size
+    total.recovered = sir.output[sir.output$I <1,][1,]$R
+    
+    r0.outbreak = rbind(r0.outbreak,
+                        data.frame(R_0 = beta.value/gamma.value, 
+                                   outbreak.size = total.recovered)
+                        )
+
+}
+
+#r0.outbreak
+```
+Plot the size of the outbreak against R_0:
+```{r}
+p <- ggplot(data = r0.outbreak) + 
+  geom_line(mapping = aes(x = R_0, y = outbreak.size), size = 2) + 
+  xlab("R_0") + 
+  ylab("Outbreak size") +
+  theme_bw()
+
+p
+```
+
+## Question: How does the outbreak size depend on R_0?
+What do you notice about how the model behaves as a function of R_0? Does this result change if we pick a different fixed value for gamma?
+
+
+# Optional exercise: When does the epidemic die out?
+
+Return to the model in exercise 1.  Plot R-effective (R_eff = R_0 * S/N) and the number of infected individuals together
+
+```{r}
+
+# Initial state values
+initial_state_values <- c(S = 9999,
+                         I = 1,
+                         R = 0
+)
+# Parameter values
+parameters <-  c(beta = 1, # per-contact infection rate
+                 gamma = .2 # recovery rate
+)
+# Time
+times = seq(from = 0, to = 50, by = .1)
+
+# Integrate
+sir.output <- as.data.frame(ode(y = initial_state_values, 
+                            times = times, 
+                            func = sir_model,
+                            parms = parameters))
+
+# Calculate R_eff = R_0 * S/N
+with(as.list(parameters), {
+    ggplot(data = sir.output) + 
+      geom_line(mapping = aes(x = time, y = beta/gamma * S/(S + I + R)), 
+                size = 2 , color = 'black') + 
+      geom_line(mapping = aes(x = time, y = I/(S+I+R)), 
+                size = 2, color = 'red') + 
+      xlab("Time") + 
+      ylab("R_eff") + 
+      theme_bw()
+  }
+)
+  
+```
+
+## Question: At what time does the epidemic peak occur?
+```{r}
+sir.output[sir.output$I == max(sir.output$I),]$time
+```
+
+Let R_eff = R_0 * S/N. This can be interpreted as the number of secondary cases arising from a single infection in a population which has already been partially infected.
+
+## Question: At the time of the epidemic peak, what is the value of R_eff?
+```{r}
+
+with(as.list(c(sir.output[which(sir.output$I == max(sir.output$I)) ,], parameters)), {
+    beta/gamma * S/(S + I + R)
+})
+
+```
+
+## Question: What causes an epidemic to die out?
+
+Given the value of R_eff at the peak of the epidemic, what does that tell us about what causes the number of infected individuals to start decreasing as the epidemic dies out?

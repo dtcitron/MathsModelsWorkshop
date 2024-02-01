@@ -1,0 +1,118 @@
+---
+title: "Exercise_0_Completed"
+author: "Daniel T Citron"
+date: '2024-02-01'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 0: Introduction to Computational Tools - R
+
+With this notebook, we will walk through how to generate the code I created for Exercise 1. This will also form the basis for the other exercises in the workshop. 
+
+This is not the only way to approach and solve the various exercises in this workshop, so I encourage you to also create solutions to the exercises on your own.
+
+## Import Libraries
+```{r Load required Libraries, echo=FALSE}
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+The first thing that we will do together in this workshop is to be able to the Ordinary Differential Equation implementation of the Susceptible-Infected-Recovered model. To do this, we are going to use the `ode` function:
+
+```{r Load ode solver, echo = FALSE}
+require("deSolve") # numerical integration package
+```
+
+What does the function do? Check the documentation
+```{r}
+?deSolve::ode
+```
+
+The important arguments for `ode` are:
+  * `y` - initial state values, a list
+  * `times` - a list of times where we evaluate the ODE
+  * `func` - a function which returns the derivatives in your differential equation
+  * `parms` - a list of parameters
+To summarize, we pass our differential equation (`func`), a set of initial conditions (`y`), a set of time steps (`times`), and parameters (`parms`) into the function `ode`. The function will numerically integrate the differential equation and return values for that solution at each of the specified time steps.
+
+Let's create an array of initial conditions. You can use the create list ("concatenate") function `c()` to make an array, with elements separated by commas `c(1,2,3)`. The initial conditions are that at time=0 there are 9999 Susceptible individuals, 1 Infected individual, and 0 Recovered individuals:
+```{r}
+# Uncomment and fill in the initial conditions below
+#initial_state_values = c(S_0, I_0, R_0)
+```
+
+Let's create an array of time steps where we will evaluate the differential equation. Use the function `seq` to create a sequence of time steps between time=0 and time=50.1, with an interval of 0.1
+```{r}
+# Define a list of time steps
+?seq
+# Uncomment and fill in the code below
+# times = seq()
+```
+
+Let's create an array of arguments `c(Beta, Gamma)` to pass to our differential equation
+```{r}
+# Uncomment and fill in the values below
+#parameters = c(Beta, Gamma)
+```
+
+Finally, we need to create a function which evaluates the derivatives of each of our state variables, our differential equation. 
+
+It should take in the following things as arguments
+
+* Array of current state variable values, ordered the same as the initial_state_variables above
+* Current time
+* Parameter values
+
+It should return an array of derivatives `c(dS, dI, dR)`, ordered the same as the initial_state_variables above
+
+Complete the code below where indicated:
+```{r}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters Beta, Gamma
+
+  
+  # Unpack current state variables S, I, R
+
+    # Calculate total population size
+    # N <- 
+    
+    # Calculate force of infection
+    # lambda <- 
+    
+    # Calculate derivatives
+    # dS <- 
+    # dI <- 
+    # dR <- 
+    
+    # Return derivative
+    return(list(c(dS, dI, dR)))
+}
+```
+
+
+Now, use the `ode` function to integrate:
+```{r}
+sir.output <- as.data.frame(ode(y = initial_state_values, 
+                            times = times, 
+                            func = sir_model,
+                            parms = parameters))
+```
+
+Create a quick plot
+```{r}
+ggplot(data = sir.output) + 
+  geom_line(mapping = aes(x = time, y = S), 
+            color = 'blue', size = 2) + 
+  geom_line(mapping = aes(x = time, y = R), 
+            color = 'black', size = 2) + 
+  geom_line(mapping = aes(x = time, y = I), 
+            color = 'red', size = 2)
+
+```
+

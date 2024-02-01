@@ -1,0 +1,143 @@
+---
+title: "Exercise_2_Pseudocode"
+author: "Daniel T Citron"
+date: '2023-07-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Set up
+```{r Load required Libraries}
+require("deSolve") # numerical integration package
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+```{r Define SIR model function to be integrated}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters
+
+  # Calculate force of infection
+  #lambda <- 
+  
+  # Calculate derivatives
+  #dS <-
+  #dI <- 
+  #dR <- 
+  
+  # Return derivative
+  return(list(c(dS, dI, dR)))
+}
+```
+
+
+# Exercise 2: Behavior of the SIR Model
+
+In this exercise we will explore the behavior and properties of the SIR model. For a range of parameter values of beta and gamma, find the size of the epidemic. (This code block may take a minute to run.)
+```{r}
+# Initial state values
+initial_state_values <- c(S = 9999,
+                         I = 1,
+                         R = 0
+)
+
+# Define a list of time steps 
+#times = 
+
+# Loop over a range of beta and gamma, find the size of the epidemic each time
+for (beta.value in seq(0,1,.1)){
+  for (gamma.value in seq(.1,1.,.1)){
+    # Integrate
+    
+    # Find the total outbreak size
+
+    # Return total outbreak size vs. beta and gamma
+    
+  }
+}
+
+#beta.gamma.outbreak
+
+```
+
+Plot the results, the log of the outbreak size as a function of beta and gamma.
+```{r}
+
+```
+
+
+## Question: What do you notice about how the outbreak size depends on beta and gamma?
+
+**Pause here**
+
+# Exercise 2 part 2
+
+How does the outbreak size change depending on the basic reproductive number R_0 = beta/gamma?
+
+Fix gamma = .2, vary beta from 0 to 1 such that R_0 varies from 0 to 5.
+```{r}
+# Define a list of time steps 
+times = seq(from = 0, to = 1000, by = .1)
+
+# Loop over a range of beta and gamma, find the size of the epidemic each time
+gamma.value = .2
+
+for (beta.value in seq(0,1,.05)){
+    # Integrate
+    
+    # Find and return the total outbreak size
+  
+}
+```
+Plot the size of the outbreak against R_0:
+```{r}
+
+```
+
+## Question: How does the outbreak size depend on R_0?
+What do you notice about how the model behaves as a function of R_0? Does this result change if we pick a different fixed value for gamma?
+
+
+# Optional exercise: When does the epidemic die out?
+
+Return to the model in exercise 1. Plot R-effective (R_eff = R_0 * S/N) and the number of infected individuals together
+
+```{r}
+
+# Initial state values
+initial_state_values <- c(S = 9999,
+                         I = 1,
+                         R = 0
+)
+# Parameter values
+parameters <-  c(beta = 1, # per-contact infection rate
+                 gamma = .2 # recovery rate
+)
+# Time
+times = seq(from = 0, to = 50, by = .1)
+
+# Integrate
+
+# Calculate R_eff = R_0 * S/N
+```
+
+## Question: At what time does the epidemic peak occur?
+```{r}
+
+```
+
+Let R_eff = R_0 * S/N. This can be interpreted as the number of secondary cases arising from a single infection in a population which has already been partially infected.
+
+## Question: At the time of the epidemic peak, what is the value of R_eff?
+```{r}
+
+```
+
+## Question: What causes an epidemic to die out?
+
+Given the value of R_eff at the peak of the epidemic, what does that tell us about what causes the number of infected individuals to start decreasing as the epidemic dies out?

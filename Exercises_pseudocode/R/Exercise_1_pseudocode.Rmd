@@ -1,0 +1,158 @@
+---
+title: "Exercise_1_Pseudocode"
+author: "Daniel T Citron"
+date: '2023-07-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Import Libraries
+
+```{r Load required Libraries, echo=FALSE}
+require("deSolve") # numerical integration package
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+# Exercise 1: Numerical solution to the SIR model
+
+We will use a numerical ODE solver to integrate the SIR model. Our state variables are (S, I, R) and our parameters are beta and gamma.
+
+```{r Define SIR model function to be integrated}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters
+
+  # Calculate force of infection
+  #lambda <- 
+  
+  # Calculate derivatives
+  #dS <-
+  #dI <- 
+  #dR <- 
+  
+  # Return derivative
+  return(list(c(dS, dI, dR)))
+}
+```
+
+Define the initial state variables, parameters, and time span. Integrate the SIR function defined in the previous block.
+```{r}
+# Initial values for state variables
+initial_state_values <- c(S = 9999,
+                         I = 1,
+                         R = 0
+)
+
+# Parameter values
+parameters <-  c(beta = 1, # per-contact infection rate
+                 gamma = 1/7 # recovery rate
+)
+
+# Define a list of time steps 
+times = seq(from = 0, to = 100, by = .1)
+
+# Integrate
+sir.output <- as.data.frame(ode(y = initial_state_values, 
+                            times = times, 
+                            func = sir_model,
+                            parms = parameters))
+```
+
+Plot the output:
+```{r}
+p <- ggplot(data = sir.output) + 
+  geom_line(mapping = aes(x = time, y = S), 
+            color = 'blue', size = 2) + 
+  geom_line(mapping = aes(x = time, y = R), 
+            color = 'black', size = 2) + 
+  geom_line(mapping = aes(x = time, y = I), 
+            color = 'red', size = 2) + 
+  xlim(0,100) + 
+  xlab("Time") + 
+  ylab("Number of People") + 
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = 24)) + 
+  theme_bw()
+
+p
+```
+
+
+## Questions Part 1: Analyzing the outbreak
+
+How many total people became infected? (The epidemic is over when fewer than one people remain infected)
+```{r}
+# Find the first time when the number of infected drops below 1
+```
+
+What time was the peak of the epidemic?
+```{r}
+```
+
+How many people were infected at the time of the peak?
+```{r}
+```
+
+## Questions Part 2: What do you notice about the model output? 
+Try a few different combinations of beta and gamma, and see how the plot changes.
+
+Try varying the infection rate (𝜷) – 
+  * What changes when you increase it to 2?
+  * What changes when you decrease it to 0.1?
+```{r}
+# Parameter values
+parameters <-  c(beta = 2, # per-contact infection rate
+                 gamma = 1/7 # recovery rate
+)
+
+# Integrate
+
+# Plot
+```
+
+```{r}
+# Parameter values
+parameters <-  c(beta = .1, # per-contact infection rate
+                 gamma = 1/7 # recovery rate
+)
+
+# Integrate
+
+# Plot
+```
+
+Try varying the time spent infected (1/𝜸) - 
+  * What changes when you increase it to 14?
+  * What changes when you decrease it to 0.7?
+```{r}
+# Parameter values
+parameters <-  c(beta = 1, # per-contact infection rate
+                 gamma = 1/14 # recovery rate
+)
+
+# Integrate
+
+# Plot
+```
+
+```{r}
+# Parameter values
+parameters <-  c(beta = 1, # per-contact infection rate
+                 gamma = 1/.7 # recovery rate
+)
+
+# Integrate
+
+# Plot
+```
+
+Try a few different combinations of the two parameters. For what values do you see an outbreak, and for what values do you find there is no outbreak?
+```{r}
+
+```
+

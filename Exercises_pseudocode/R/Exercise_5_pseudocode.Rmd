@@ -1,0 +1,190 @@
+---
+title: "Exercise_5_Completed"
+author: "Daniel T Citron"
+date: '2024-01-31'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 5: Forecasting
+
+Here we will practice using our model as a forecasting tool. We will fit the model to the initial part of our plague dataset and see whether the model succeeds in predicting the later parts of the plague dataset.
+
+## Setup
+```{r Load required Libraries}
+require("deSolve") # numerical integration package
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+```{r Define SIR model function to be integrated}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters
+
+  # Calculate force of infection
+  #lambda <- 
+  
+  # Calculate derivatives
+  #dS <-
+  #dI <- 
+  #dR <- 
+  
+  # Return derivative
+  return(list(c(dS, dI, dR)))
+}
+```
+
+Load plague data
+```{r}
+plague.dat = read.csv(file = "../../plague_data.csv", header = TRUE)
+
+plague.dat <- plague.dat %>% mutate(time = row_number())
+
+plague.dat %>% head
+```
+
+
+
+Use the result from Exercise 3 to 
+```{r}
+# Using the optimized parameter values from before
+# (if you found something different, feel free to use those values here)
+parameters = c(beta = 2.559449, gamma =  2.109450)
+
+# First we need to repeat the fit from before, to perform the comparison
+initial_state_values <- c(S = 55000 - 1,
+                         I = 1,
+                         R = 0
+)
+# sir.fit <- 
+```
+
+## Fit model to partial data
+Re-run calibration, similar to Exercise 3, using a subset of data starting in week 10 and ending in week 20.
+
+Define cost function
+```{r Define cost function}
+sir.sse <- function(model.func, parameters, times, dat) {
+    
+    # Calculate model output
+    # output <- 
+  
+    # Calculate sum-of-squares (sse) of model fit
+    #sse <- 
+
+    return(sse)
+}
+```
+
+Isolate the first data points from week 10 through week 20 in the plague dataset, and re-run the calibration (similar to what we did in Exercise 3)
+```{r}
+# Create new truncated dataset up through week 20
+plague.dat.initial <- plague.dat[1:20,]
+
+# Initial guess for parameters
+parameters = c(beta = 1., gamma = .5)
+
+# Define times - start at week 10, run to week 20 only
+times.initial = seq(from = 10, to = 20, by = 1)
+
+# Initial state values
+initial_state_values <- c(S = 54999,
+                         I = 1,
+                         R = 0
+)
+
+# Use optim to find the parameter set which comes closest to fitting the data
+# Minimizes sum of squared errors function defined above
+fitval.forecast <- stats::optim( par = parameters,
+                  fn  = sir.sse,
+                  model.func = sir_model,
+                  times = times.initial,
+                  dat = plague.dat.initial,
+                  gr = "BFGS"
+             )
+
+# Parameter values from the optimization:
+fitval.forecast$par
+```
+
+Use the values of beta and gamma to forecast the rest of the outbreak:
+```{r}
+initial_state_values <- c(S = 55000 - 1,
+                         I = 1,
+                         R = 0
+)
+#sir.forecast <-
+```
+
+Create a plot of your results
+```{r}
+
+
+```
+
+## Question - Predicted Deaths
+How many deaths does the forecast model predict will occur during the outbreak?
+```{r}
+
+```
+
+How does that compare to the number of people who became infected before?
+```{r}
+
+```
+
+The difference between these two counts reflects the accuracy of your forecast.
+
+## Question - R0
+What is R0 for your forecast model fit to only the first few data points?
+```{r}
+
+```
+
+What was R0 for your model fit to all of the data points
+```{r}
+
+```
+
+How do these two values of R0 compare? How is this reflected in the differences between your forecasted model and the original model?
+
+## Optional Question: Improving the forecast
+Think of ways that you can make your forecast better. 
+
+What happens to the forecast you change the initial parameter guess to the same values as in the original model (beta = 2.559, gamma = 2.109)?
+
+## Optional Question: Parameter Uncertainty
+Imagine that your parameter values have some uncertainty to them, and that they can range according to a uniform distribution with width +/- 10%. From this we can imagine a range of possible future outcomes: The uncertainty in our parameters translates into uncertainty in our forecast outcomes.
+
+First, create a list of parameter combinations
+```{r}
+# 100 pair values for Beta, Gamma
+# fit.forecast.pars = 
+```
+
+Loop over each parameter combination: create a set of datapoints for each parameter combination
+```{r}
+for(i in 1:100){
+  # integrate model
+  # sir.forecast.sample <-
+  
+  # collect integrated model output
+  
+  # save, and return all 100 integrated model outputs
+
+}
+```
+
+Plot!
+```{r}
+
+```
+Describe what you see - how big is the variation in the range of possible outputs? Are there systematic failures in the forecast with the uncertainties we have used for our parameter values?
+
+# Optional Exercise: How initial data affects forecasting
+Try creating a new forecast, this time with fewer initial data points.

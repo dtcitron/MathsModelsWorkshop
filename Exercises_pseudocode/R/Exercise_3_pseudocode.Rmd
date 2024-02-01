@@ -1,0 +1,131 @@
+---
+title: "Exercise_3_Pseudocode"
+author: "Daniel T Citron"
+date: '2023-07-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Exercise 3: Model calibration
+
+## Set up
+```{r Load required Libraries}
+require("deSolve") # numerical integration package
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+```{r Define SIR model function to be integrated}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters
+
+  # Calculate force of infection
+  #lambda <- 
+  
+  # Calculate derivatives
+  #dS <-
+  #dI <- 
+  #dR <- 
+  
+  # Return derivative
+  return(list(c(dS, dI, dR)))
+}
+```
+
+## Load plague data
+Load the plague data
+```{r}
+plague.dat = read.csv(file = "../../plague_data.csv", header = TRUE)
+
+plague.dat <- plague.dat %>% mutate(time = row_number())
+
+plague.dat %>% head
+```
+
+
+## Define cost function
+Define a cost function for quantifying the sum of squared errors - the difference between the data and our model:
+```{r}
+sir.sse <- function(model.func, parameters, times, dat) {
+    
+    # Calculate model output
+    # output <- 
+  
+    # Calculate sum-of-squares (sse) of model fit
+    #sse <- 
+
+    return(sse)
+}
+```
+
+## Use optimization function
+Use an optimization function to find the parameter set which minimizes the sum of squared errors between the plague data and the infectious disease model. Assume an initial population of 55000 people and that the infection first starts on week 10:
+```{r Run the calibration}
+# Initial guess for parameters
+parameters = c(beta = 1., gamma = .5)
+
+# Define times - start at week 10
+times = seq(from = 10, to = 60, by = 1)
+
+# Initial state values
+initial_state_values <- c(S = 54999,
+                         I = 1,
+                         R = 0
+)
+
+# Use optim to find the parameter set which comes closest to fitting the data
+# Minimizes sum of squared errors function defined above
+fitval <- stats::optim(
+                  fn  = sir.sse,
+                  model.func = sir_model,
+                  times = times,
+                  dat = plague.dat,
+                  gr = "BFGS"
+             )
+
+# Parameter values from the optimization:
+fitval$par
+
+```
+
+```{r}
+sir.sse(sir_model, fitval$par, plague.d)
+```
+
+Run the model using the optimized parameter values, and plot to compare against the data:
+```{r Plot model using optimized parameter values }
+# Integrate the model using the optimized parameter values
+#sir.fit <- deSolve::ode()
+
+# Plot
+```
+
+
+## Question: What is R0 for your fitted model?
+```{r}
+
+```
+
+
+
+## Question: What do you notice about your fitted model?
+Look at the plot above: what do you notice about it? Where does it do a good job of fitting the data? Where does it fail to fit the data?
+
+What might we change about the assumptions of our model to improve the model fit?
+
+## Question: What is missing from our model?
+
+The SIR model is very simplistic - can you think of any aspects of disease transmission which we could add to our model in order to make the fit more realistic?
+
+## Optional questions to consider
+
+* If we vary the initial guess for the parameters, does the answer change in a meaningful way?
+* What happens if we do not assume that the initial population size is known at the start? How should we change the calibration?
+* What happens if we assume that not all cases are reported on, and that the data represented here are systematically under-counting, but we do not know by how much? How should we change the calibration?
+

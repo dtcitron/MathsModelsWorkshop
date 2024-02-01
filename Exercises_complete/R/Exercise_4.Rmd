@@ -1,0 +1,242 @@
+---
+title: "Exercise_4_Completed"
+author: "Daniel T Citron"
+date: '2023-07-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 4: Interventions
+
+Here we will practice altering the starting conditions and structure of our SIR model in order to represent what will happen when we add interventions. Each version of our model represents a different modeling scenario. By comparing different scenarios, we can imagine different ways that the outbreak will occur under different conditions.
+
+## Set up
+```{r Load required Libraries}
+require("deSolve") # numerical integration package
+require("tidyverse") # packages for handling and reshaping data
+require("reshape2")
+require("magrittr")
+require("stats") # statistics package
+```
+
+```{r Define SIR model function to be integrated}
+sir_model <- function(time, state, parameters) {
+  # Unpack Parameters
+  with(as.list(c(state,parameters)), {
+      # Calculate total population size
+      N <-  S + I + R
+      
+      # Calculate force of infection
+      lambda <- beta * I / N
+      
+      # Calculate derivatives
+      dS <- -lambda * S
+      dI <- lambda * S - gamma * I
+      dR <- gamma * I
+      
+      # Return derivative
+      return(list(c(dS, dI, dR)))
+    }
+  )
+}
+```
+
+Load plague data
+```{r}
+plague.dat = read.csv(file = "../../plague_data.csv", header = TRUE)
+
+plague.dat <- plague.dat %>% mutate(time = row_number())
+
+plague.dat %>% head
+```
+
+# Part 1: Quarantine
+Suppose we are able to quarantine a certain fraction of susceptibles in the population before the outbreak starts, such that they never become infected.
+
+We represent this by removing a fraction of the susceptible population at the start, and see whether the outbreak takes off. Let p.quarantine = fraction of susceptibles who are quarantined at the start. Those who are quarantined never interact with the other people in the population, so they are effectively removed from the population.
+
+Start by letting p.quarantine = .25:
+```{r}
+# Using the optimized parameter values from before
+# Obtain the model result in the scenario without quarantine
+# This is the same as the result from Exercise 3
+# (if you found something different, feel free to use those values here)
+parameters = c(beta = 2.559449, gamma =  2.109450)
+
+# First we need to repeat the fit from before, to perform the comparison
+initial_state_values <- c(S = 55000 - 1,
+                         I = 1,
+                         R = 0
+)
+sir.fit <- deSolve::ode(initial_state_values, 
+                        seq(from = 10, to = 55, by = 1), 
+                        sir_model, 
+                        parms = parameters, )
+sir.fit <- data.table::as.data.table(sir.fit)
+
+
+# Now, for the new scenario, adjust quarantined proportion p.quarantine here:
+p.quarantine = .25
+# Initial state values
+initial_state_values_quarantine <- c(S = 55000*(1 - p.quarantine) - 1,
+                         I = 1,
+                         R = 0
+)
+sir.quarantine <- deSolve::ode(initial_state_values_quarantine, 
+                        seq(from = 10, to = 55, by = 1), 
+                        sir_model, 
+                        parms = parameters, )
+sir.quarantine <- data.table::as.data.table(sir.quarantine)
+
+```
+
+Plot the new model results. The original model fit is shown in red, while the new scenario with quarantine is in blue:
+```{r}
+p <- ggplot() + 
+  # Quarantine scenario
+  geom_line(data = sir.quarantine, 
+            mapping = aes(x = time, y = I), 
+            color = 'blue', size = 2) + 
+  # Original scenario with no quarantine
+  geom_line(data = sir.fit, 
+            mapping = aes(x = time, y = I), 
+            color = 'red', size = 2 ) + 
+  geom_point(data = plague.dat, mapping = aes(x = time, y = Deaths), size = 3) + 
+  ylab("Deaths") + xlab("time (Weeks)") + 
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = 24)) + 
+  theme_bw()
+p
+```
+
+## Question: Cases averted through quarantine
+How many people became infected overall?
+```{r}
+sir.quarantine$R %>% tail(1)
+```
+
+How does that compare to the number of people who became infected before?
+```{r}
+sir.fit$R %>% tail(1)
+```
+
+The difference between these two numbers is the number of cases/deaths averted by intervening with the quarantine
+
+## Question: stopping an outbreak with quarantine
+Try adjusting p.quarantine: how large does it need to be in order to stop an outbreak from occurring?
+
+## Optional question
+
+In this new quarantine scenario, we have altered the structure of our model.
+
+Find an expression for R_0 as a function of beta, gamma, and p.quarantine Solve for p.quarantine such that R_0 = 1. Compare the value of p.quarantine to the value that you found which was high enough to stop an outbreak from occurring.
+
+## Optional question
+
+Suppose instead of providing perfect protection against plague, the quarantine only protected 50% of people who received it. What structural changes would we need to make to our model in order to represent this? How do your answers to each of the above questions change in this alternate scenario?
+
+# Part 2 (Optional Exercise): Treatment of infected individuals
+Suppose that treatment decreases the amount of infectious time by 25%. 
+The way we represent this is by dividing the "Infected" compartment into two, where one receives the treatment and the other does not. In the treated compartment, gamma -> gamma/(.75) (recovery rate increases by 1/.75).
+
+How many cases need to be treated in order to prevent an outbreak?
+
+Start by defining a new model with the treated compartment. This time there are four state variables, where we've added I_t to represent the number of infected people on treatment:
+```{r SIR model with treatment}
+
+sir_model_treatment <- function(time, state, parameters) {
+  # Unpack Parameters
+  with(as.list(c(state,parameters)), {
+      # Calculate total population size
+      N <-  S + I_t + I + R
+      
+      # Calculate force of infection
+      lambda <- beta * (I + I_t) / N
+      
+      # Calculate derivatives
+      dS <- -lambda * S
+      # Notice now that there is this new compartment of people who receive treatment
+      dI_t <- lambda * S * p.treatment - gamma/.75 * I_t
+      # And this compartment where people do not receive treatment
+      dI <- lambda * S * (1-p.treatment) - gamma * I
+      dR <- gamma * I + 2*gamma * I_t
+      
+      # Return derivative
+      return(list(c(dS, dI, dI_t, dR)))
+    }
+  )
+}
+
+```
+
+p.treated is the probability that an individual receives treatment. Start by setting that equal to 0.25:
+```{r}
+# Using the optimized parameter values from before
+# (if you found something different, feel free to use those values here)
+# Also specify p.treated, the fraction of infected people who receive treatment
+parameters = c(beta = 2.559449, gamma =  2.109450, p.treatment = 0.25)
+
+# Define times - start at week 10
+times = seq(from = 10, to = 75, by = 1)
+
+# Initial state values
+initial_state_values <- c(S = 54999,
+                         I = 1,
+                         I_t = 0,
+                         R = 0
+)
+sir.treated <- deSolve::ode(initial_state_values, 
+                        seq(from = 10, to = 75, by = 1), 
+                        sir_model_treatment, 
+                        parms = parameters )
+sir.treated <- data.table::as.data.table(sir.treated)
+```
+
+
+Plot the new model results. The original model fit is shown in red, while the new scenario with treatment is in blue:
+```{r}
+p <- ggplot() + 
+  geom_line(data = sir.treated, 
+            mapping = aes(x = time, y = I+I_t), 
+            color = 'blue', size = 2) + 
+    geom_line(data = sir.fit, 
+            mapping = aes(x = time, y = I), 
+            color = 'red', size = 2 ) + 
+  geom_point(data = plague.dat, mapping = aes(x = time, y = Deaths), size = 3) + 
+  ylab("Deaths") + xlab("time (Weeks)") + 
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = 24)) + 
+  theme_bw()
+
+p
+```
+
+## Question: Cases averted through treatment
+How many people became infected overall when we add treatment?
+```{r}
+sir.treated$R %>% tail(1)
+```
+
+How does that compare to the number of people who became infected in the original scenario?
+```{r}
+sir.fit$R %>% tail(1)
+```
+
+The difference between these two numbers is the number of cases/deaths averted by intervening with treatment
+
+## Question: stopping an outbreak with treatment
+Try adjusting the parameters in the treatment scenario - what coverage is needed to stop an epidemic altogether?
+
+## Optional question
+
+In this new treatment scenario, we have altered the structure of our model.
+
+Find an expression for R_0 as a function of beta, gamma, p.treatment, and the factor which changes the rate at which infected people recover with treatment. Solve for p.treatment such that R_0 = 1. Compare the value of p.treatment to the value that you found which was high enough to stop an outbreak from occurring.
+
+## Optional question
+
+Suppose that treatment does not shorten the duration of the infectious period, and instead it reduces the per-contact rate of transmission (beta) by 50%. What structural changes would we need to make to our model in order to represent this? How do your answers to each of the above questions change in this alternate scenario?
+
