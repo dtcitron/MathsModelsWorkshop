@@ -69,6 +69,7 @@ Let $p_{i,j}$ = the amount of time someone from location i spends in location j.
    6. Create a plot showing the outbreaks in the two locations.
    7. How much later is the epidemic peak in location B compared to the epidemic peak in location A? Are the outbreaks the same size in both locations? Why do you think this is?
 4. Try varying your parameters (beta, gamma, p, N) and seeing how the model dynamics change. Under what circumstances is it possible to prevent an outbreak from happening in location B while an outbreak occurs in location A?
+5. Consider also how your model will change with 3 or more populations. Try implementing that model if you have time.
 
 ## The Ross-Macdonald Model of Malaria
 
